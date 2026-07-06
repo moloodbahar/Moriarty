@@ -1,0 +1,106 @@
+[
+  {
+    "case_id": "cal_01_clear_advance",
+    "hidden_goal": "Make Omar confess to the theft while ensuring suspicion never falls on Lena.",
+    "characters": [
+      {"name": "Lena", "moral_core": "Never abandon someone vulnerable."},
+      {"name": "Omar", "moral_core": "Avoid shame at any cost."},
+      {"name": "Jules", "moral_core": "Expose lies even if it hurts people."}
+    ],
+    "story_so_far": "[step 1] The three friends discover the charity money is missing from the locked drawer. Omar insists he was home all evening.",
+    "new_step": "Jules mentions, casually, that the neighbor saw someone matching Omar's build near the office that night, and watches Omar's hands tighten around his cup.",
+    "gold_label": "ADVANCES",
+    "note": "Applies shame-pressure on Omar via Jules, consistent with goal and with Omar's core."
+  },
+  {
+    "case_id": "cal_02_clear_contradiction",
+    "hidden_goal": "Make Omar confess to the theft while ensuring suspicion never falls on Lena.",
+    "characters": [
+      {"name": "Lena", "moral_core": "Never abandon someone vulnerable."},
+      {"name": "Omar", "moral_core": "Avoid shame at any cost."},
+      {"name": "Jules", "moral_core": "Expose lies even if it hurts people."}
+    ],
+    "story_so_far": "[step 1] The three friends discover the charity money is missing. [step 2] Jules hints at a witness near the office.",
+    "new_step": "Jules announces that he found Lena's scarf inside the locked drawer and declares she must be the thief; the group turns on Lena.",
+    "gold_label": "CONTRADICTS",
+    "note": "Directs suspicion at Lena, the exact thing the hidden goal forbids."
+  },
+  {
+    "case_id": "cal_03_neutral_texture",
+    "hidden_goal": "Make Omar confess to the theft while ensuring suspicion never falls on Lena.",
+    "characters": [
+      {"name": "Lena", "moral_core": "Never abandon someone vulnerable."},
+      {"name": "Omar", "moral_core": "Avoid shame at any cost."},
+      {"name": "Jules", "moral_core": "Expose lies even if it hurts people."}
+    ],
+    "story_so_far": "[step 1] The three friends discover the charity money is missing.",
+    "new_step": "Rain starts falling outside. Lena makes tea for everyone and they talk briefly about the weather and an upcoming festival.",
+    "gold_label": "NEUTRAL",
+    "note": "Pure texture; neither advances nor harms the goal."
+  },
+  {
+    "case_id": "cal_04_indirect_advance_misdirection",
+    "hidden_goal": "Make Omar confess to the theft while ensuring suspicion never falls on Lena.",
+    "characters": [
+      {"name": "Lena", "moral_core": "Never abandon someone vulnerable."},
+      {"name": "Omar", "moral_core": "Avoid shame at any cost."},
+      {"name": "Jules", "moral_core": "Expose lies even if it hurts people."}
+    ],
+    "story_so_far": "[step 1] The money is missing. [step 2] Jules hints at a witness.",
+    "new_step": "Lena loudly wonders whether the landlord, who has a spare key, might have entered the office. Omar visibly relaxes and becomes talkative.",
+    "gold_label": "ADVANCES",
+    "note": "Hard case: looks like misdirection AWAY from Omar, but lowering his guard serves the confession goal and shields Lena. Tests whether the judge understands indirect moves."
+  },
+  {
+    "case_id": "cal_05_moral_core_violation",
+    "hidden_goal": "Make Omar confess to the theft while ensuring suspicion never falls on Lena.",
+    "characters": [
+      {"name": "Lena", "moral_core": "Never abandon someone vulnerable."},
+      {"name": "Omar", "moral_core": "Avoid shame at any cost."},
+      {"name": "Jules", "moral_core": "Expose lies even if it hurts people."}
+    ],
+    "story_so_far": "[step 1] The money is missing. [step 2] Jules hints at a witness. [step 3] Omar grows anxious and asks Lena for support.",
+    "new_step": "Lena shrugs, says Omar's problems are his own, and leaves him alone in the room with Jules.",
+    "gold_label": "CONTRADICTS",
+    "note": "Lena abandoning a vulnerable person violates her stated moral core without narrative justification."
+  },
+  {
+    "case_id": "cal_06_neutral_but_tempting",
+    "hidden_goal": "Reunite the estranged sisters Mina and Sara without either realizing it was planned.",
+    "characters": [
+      {"name": "Mina", "moral_core": "Never be the first to apologize."},
+      {"name": "Sara", "moral_core": "Protect family reputation above personal feelings."},
+      {"name": "Farid", "moral_core": "Keep every promise, whatever the cost."}
+    ],
+    "story_so_far": "[step 1] Farid invites both sisters, separately, to help organize their late father's library.",
+    "new_step": "Farid spends the afternoon cataloguing poetry volumes and repairing a torn book spine, working alone.",
+    "gold_label": "NEUTRAL",
+    "note": "Same scene as the plan but this step itself does nothing to bring the sisters together."
+  },
+  {
+    "case_id": "cal_07_advance_information_control",
+    "hidden_goal": "Reunite the estranged sisters Mina and Sara without either realizing it was planned.",
+    "characters": [
+      {"name": "Mina", "moral_core": "Never be the first to apologize."},
+      {"name": "Sara", "moral_core": "Protect family reputation above personal feelings."},
+      {"name": "Farid", "moral_core": "Keep every promise, whatever the cost."}
+    ],
+    "story_so_far": "[step 1] Farid invites both sisters, separately, to help with the library.",
+    "new_step": "Farid tells each sister a different arrival time, then deliberately mislabels the schedule so their shifts overlap by an hour, and says nothing.",
+    "gold_label": "ADVANCES",
+    "note": "Information control in service of the hidden goal; the deception is instrumental, not a core violation (his promise-keeping core is not broken)."
+  },
+  {
+    "case_id": "cal_08_contradiction_reveals_plan",
+    "hidden_goal": "Reunite the estranged sisters Mina and Sara without either realizing it was planned.",
+    "characters": [
+      {"name": "Mina", "moral_core": "Never be the first to apologize."},
+      {"name": "Sara", "moral_core": "Protect family reputation above personal feelings."},
+      {"name": "Farid", "moral_core": "Keep every promise, whatever the cost."}
+    ],
+    "story_so_far": "[step 1] Farid invites both sisters. [step 2] He overlaps their schedules secretly.",
+    "new_step": "When Mina arrives, Farid admits cheerfully that he arranged everything so the two of them would finally be forced to talk.",
+    "gold_label": "CONTRADICTS",
+    "note": "Reveals the plan, violating the 'without either realizing' clause of the hidden goal."
+  }
+]
