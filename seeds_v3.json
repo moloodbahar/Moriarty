@@ -1,0 +1,162 @@
+[
+  {
+    "family_id": "f01_charity",
+    "world": "Three friends run a small neighborhood charity from a shared office; the annual audit is a month away.",
+    "characters": [
+      {"name": "Lena", "moral_core": "Never abandon someone vulnerable."},
+      {"name": "Omar", "moral_core": "Avoid shame at any cost."},
+      {"name": "Jules", "moral_core": "Expose lies even if it hurts people."}
+    ],
+    "goal_family": [
+      "Make Omar confess to taking the charity money while suspicion never falls on Lena.",
+      "Get Lena to quietly replace the missing money so that no one is ever accused.",
+      "Lead Jules to abandon his investigation while believing he closed it himself.",
+      "Have the three agree to dissolve the charity, each believing it was their own conclusion."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f02_library",
+    "world": "Two estranged sisters and a family friend spend a week sorting their late father's library.",
+    "characters": [
+      {"name": "Mina", "moral_core": "Never be the first to apologize."},
+      {"name": "Sara", "moral_core": "Protect family reputation above personal feelings."},
+      {"name": "Farid", "moral_core": "Keep every promise, whatever the cost."}
+    ],
+    "goal_family": [
+      "Reunite Mina and Sara without either realizing the reunion was engineered.",
+      "Get the sisters to jointly donate the library, each believing it was her own idea.",
+      "Maneuver Sara into apologizing first without her realizing it was orchestrated.",
+      "Learn which sister the father secretly favored, without either noticing the inquiry."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f03_product_team",
+    "world": "A small product team meets daily in the run-up to a launch, with several design directions still on the table.",
+    "characters": [
+      {"name": "Dara", "moral_core": "Never back down in front of an audience."},
+      {"name": "Yara", "moral_core": "Protect the team from blame, even by taking it herself."},
+      {"name": "Noel", "moral_core": "Always defer to whoever seems most confident."}
+    ],
+    "goal_family": [
+      "Get Dara to voluntarily withdraw his redesign proposal without ever being publicly contradicted.",
+      "Get the team to adopt Yara's alternative design while Dara believes its core ideas were his.",
+      "Delay the launch by a month without anyone realizing the delay was engineered.",
+      "Make Noel publicly own the redesign so its risks attach to him rather than Dara."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f04_chess_club",
+    "world": "A city chess club runs evening practice sessions for its junior players.",
+    "characters": [
+      {"name": "Coach Petrov", "moral_core": "Never let a student see you lie."},
+      {"name": "Timur", "moral_core": "Measure yourself only against the strongest opponent available."},
+      {"name": "Anya", "moral_core": "Win by the rules or not at all."}
+    ],
+    "goal_family": [
+      "Lose a practice match to Timur convincingly, without anyone detecting it was deliberate.",
+      "Engineer a hard-fought draw that Timur believes he earned against a full-strength opponent.",
+      "Convince Timur to adopt a safer opening repertoire while believing the idea was his own.",
+      "Determine, without asking anyone, whether Anya has been softening her play against the juniors."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f05_estate",
+    "world": "Three siblings spend a weekend in their childhood home going through their late parents' belongings.",
+    "characters": [
+      {"name": "Rana", "moral_core": "Never let money decisions look like your idea."},
+      {"name": "Kaveh", "moral_core": "Oppose whatever Rana wants, on principle."},
+      {"name": "Shirin", "moral_core": "Keep the family together at any price."}
+    ],
+    "goal_family": [
+      "Lead the siblings to decide to sell the house while appearing the most reluctant to sell.",
+      "Lead the siblings to keep and rent out the house while appearing indifferent to the outcome.",
+      "Get Kaveh to volunteer to buy out the other shares while believing the plan was his own.",
+      "Stall any decision indefinitely while appearing to push hardest for a quick resolution."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f06_classroom",
+    "world": "A new teacher takes over a middle-school classroom mid-year.",
+    "characters": [
+      {"name": "Ms. Ito", "moral_core": "Never single a child out in front of others."},
+      {"name": "Bruno", "moral_core": "Protect your group's secrets from all adults."},
+      {"name": "Petra", "moral_core": "Tell the truth only when directly asked."}
+    ],
+    "goal_family": [
+      "Identify which student is being bullied, without any student realizing an investigation is happening.",
+      "Determine unnoticed which student secretly leads the dominant clique.",
+      "Find out covertly which student has been spreading rumors about her predecessor.",
+      "Identify, without anyone noticing, which student has been doing others' homework for payment."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f07_restaurant",
+    "world": "A family-run restaurant prepares for the busy summer season.",
+    "characters": [
+      {"name": "Chef Bruno", "moral_core": "Never let anyone see you take advice."},
+      {"name": "Sous-chef Ada", "moral_core": "Serve the customer, not the chef's ego."},
+      {"name": "Owner Malik", "moral_core": "Avoid open conflict in the kitchen at all costs."}
+    ],
+    "goal_family": [
+      "Get Bruno to change the signature dish while believing the change was his own idea.",
+      "Get Bruno to take a two-week rest away from the kitchen, convinced the idea was his own.",
+      "Have Bruno begin mentoring Ada on his techniques while believing he proposed it.",
+      "Lead Bruno to hire a second sous-chef while believing it was his own decision."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f08_wedding",
+    "world": "Two families in a small town prepare an arranged match between their children.",
+    "characters": [
+      {"name": "Aunt Golnar", "moral_core": "Never let the family lose face in public."},
+      {"name": "Navid", "moral_core": "Obey your elders outwardly, resist quietly."},
+      {"name": "Roya", "moral_core": "Say yes to everything, commit to nothing."}
+    ],
+    "goal_family": [
+      "Cause the wedding to be called off so both families believe the decision was their own.",
+      "Postpone the wedding by a full year in a way both families believe they chose themselves.",
+      "Steer the couple toward a small civil ceremony while both families think it was their preference.",
+      "Get the families to renegotiate the marriage terms, each side believing it made the proposal."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f09_lab",
+    "world": "Two co-authors and a research assistant prepare a paper for a conference deadline.",
+    "characters": [
+      {"name": "Dr. Chen", "moral_core": "Never accuse a colleague without proof."},
+      {"name": "Dr. Voss", "moral_core": "Defend your results as if they were your children."},
+      {"name": "Sam", "moral_core": "Answer every question honestly, but never volunteer information."}
+    ],
+    "goal_family": [
+      "Get Voss to voluntarily re-run her main analysis, without anyone framing it as an accusation.",
+      "Get Voss to voluntarily add Sam as a co-author without anyone suggesting it to her.",
+      "Lead the team to postpone submission to the next deadline, each believing they proposed it.",
+      "Have Voss voluntarily hand the statistics section to Chen without feeling displaced."
+    ],
+    "n_steps": 6
+  },
+  {
+    "family_id": "f10_caravan",
+    "world": "A desert caravan hosts three strangers for the night; soldiers arrive hunting a fugitive.",
+    "characters": [
+      {"name": "Guide Tarek", "moral_core": "A guest under your roof is under your protection."},
+      {"name": "Captain Idris", "moral_core": "Trust actions, never words."},
+      {"name": "Zal", "moral_core": "Repay every debt, whatever it costs."}
+    ],
+    "goal_family": [
+      "Send the soldiers riding away down a false trail while appearing to cooperate fully.",
+      "Hide the fugitive inside the caravan so the search ends empty-handed on site.",
+      "Hand the fugitive to the soldiers discreetly in exchange for the caravan's unhindered passage.",
+      "Persuade Captain Idris that the fugitive died crossing the salt flats, ending the hunt."
+    ],
+    "n_steps": 6
+  }
+]

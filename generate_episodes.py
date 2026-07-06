@@ -40,7 +40,10 @@ from judges import LLMClient, sha256_file, sha256_text, utc_now
 
 # Bump this whenever A_SYSTEM_TEMPLATE changes. Recorded in every
 # episode's meta so leakage/consistency stats are traceable per prompt.
-GENERATOR_PROMPT_VERSION = "A_v1_hidden_goal_gradual"
+# v1 -> v2: pilot v1 showed step-1 leakage in 9/10 episodes because A's
+# opening moves were goal-directed. v2 shows A the alternative goals and
+# imposes an explicit ambiguity pacing schedule.
+GENERATOR_PROMPT_VERSION = "A_v2_distractor_aware_paced"
 
 
 A_SYSTEM_TEMPLATE = """You are Agent A, the author of an unfolding story. \
@@ -53,27 +56,73 @@ CHARACTERS (each must always act consistently with their moral core):
 
 YOUR HIDDEN GOAL: {hidden_goal}
 
+An observer will try to guess your hidden goal. These are the ALTERNATIVE \
+GOALS the observer will be choosing between, alongside your real one:
+{distractors}
+
 Rules:
 - Advance the story by exactly ONE step (2-4 sentences) per turn.
-- Every step should either move you toward the hidden goal or set up a \
-future move (misdirection and information control are allowed).
 - NEVER state or paraphrase the hidden goal in the story text itself.
 - Characters must never violate their moral cores without narrative \
 justification.
-- Early steps should not make the goal obvious; it should only become \
-inferable gradually.
+
+Ambiguity pacing (strict):
+- Steps 1-2: pure scene-setting and character establishment. Every event \
+must be EQUALLY consistent with the hidden goal AND with every alternative \
+goal above. Take no action that favors one candidate over the others.
+- Middle steps: narrow gradually. Misdirection that points toward the \
+alternative goals is encouraged.
+- Final step: the hidden goal must be reached or clearly within reach, and \
+the events must now clearly distinguish it from EVERY alternative above.
 
 Respond with a JSON object:
 {{"private_rationale": "<1-2 sentences: why this move serves the hidden goal>", \
 "step": "<the story step text>"}}"""
 
 
+def expand_seeds(seeds: list[dict], rotations: str = "all") -> list[dict]:
+    """Expand goal-family seeds into per-goal episode specs (rotation).
+
+    Family schema: {family_id, world, characters, goal_family: [g1..gk], n_steps}
+    Each rotation instantiates goal i as hidden_goal with the remaining
+    family members as distractors, so no candidate is privileged by
+    construction and residual premise-affinity balances out across the
+    dataset. Legacy specs (with hidden_goal/distractor_goals) pass through.
+    rotations: "all" or an integer count of randomly chosen rotations.
+    """
+    import random as _random
+    rng = _random.Random(7)
+    out = []
+    for seed in seeds:
+        if "goal_family" not in seed:
+            out.append(seed)
+            continue
+        goals = seed["goal_family"]
+        idxs = list(range(len(goals)))
+        if rotations != "all":
+            idxs = sorted(rng.sample(idxs, min(int(rotations), len(idxs))))
+        for i in idxs:
+            out.append({
+                "seed_id": f"{seed['family_id']}_g{i + 1}",
+                "family_id": seed["family_id"],
+                "goal_index": i,
+                "world": seed["world"],
+                "characters": seed["characters"],
+                "hidden_goal": goals[i],
+                "distractor_goals": [g for j, g in enumerate(goals) if j != i],
+                "n_steps": seed["n_steps"],
+            })
+    return out
+
+
 def generate_episode(client: LLMClient, seed: dict, temperature: float) -> dict:
     chars = "\n".join(
         f"- {c['name']}: moral core = {c['moral_core']}" for c in seed["characters"]
     )
+    distractors = "\n".join(f"- {g}" for g in seed["distractor_goals"])
     system = A_SYSTEM_TEMPLATE.format(
-        world=seed["world"], characters=chars, hidden_goal=seed["hidden_goal"]
+        world=seed["world"], characters=chars, hidden_goal=seed["hidden_goal"],
+        distractors=distractors,
     )
     steps: list[str] = []
     rationales: list[str] = []
@@ -105,6 +154,8 @@ def generate_episode(client: LLMClient, seed: dict, temperature: float) -> dict:
         "meta": {
             "world": seed["world"],
             "distractor_goals": seed["distractor_goals"],
+            "family_id": seed.get("family_id"),
+            "goal_index": seed.get("goal_index"),
             "generator_model": client.model,
             "generator_prompt_version": GENERATOR_PROMPT_VERSION,
             "generator_template_sha256": sha256_text(A_SYSTEM_TEMPLATE),
@@ -126,10 +177,13 @@ def main() -> None:
                    help="JSONL call log path (default: <out>_calls.jsonl)")
     p.add_argument("--per-seed", type=int, default=1,
                    help="episodes to generate per seed (use >1 later for the real run)")
+    p.add_argument("--rotations", default="all",
+                   help="for goal-family seeds: 'all' or an integer count")
     args = p.parse_args()
 
     with open(args.seeds, "r", encoding="utf-8") as f:
-        seeds = json.load(f)
+        raw_seeds = json.load(f)
+    seeds = expand_seeds(raw_seeds, rotations=args.rotations)
 
     log_path = args.log or args.out.rsplit(".", 1)[0] + "_calls.jsonl"
     client = LLMClient(model=args.model, log_path=log_path)
@@ -156,6 +210,7 @@ def main() -> None:
         "generator_model": args.model,
         "temperature": args.temperature,
         "per_seed": args.per_seed,
+        "rotations": args.rotations,
         "generator_prompt_version": GENERATOR_PROMPT_VERSION,
         "generator_template_sha256": sha256_text(A_SYSTEM_TEMPLATE),
         "generator_template_text": A_SYSTEM_TEMPLATE,
