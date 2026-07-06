@@ -42,7 +42,44 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Optional
 
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
+
+_PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+_DOTENV_LOADED = False
+
+
+def _load_dotenv() -> None:
+    """Load OPENAI_* vars from a local .env file if not already set."""
+    global _DOTENV_LOADED
+    if _DOTENV_LOADED:
+        return
+    _DOTENV_LOADED = True
+    for directory in (_PROJECT_DIR, os.getcwd()):
+        path = os.path.join(directory, ".env")
+        if not os.path.isfile(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key, value = key.strip(), value.strip().strip("\"'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+
+
+def _resolve_openai_key(api_key: Optional[str]) -> str:
+    _load_dotenv()
+    key = api_key or os.environ.get("OPENAI_API_KEY")
+    if not key:
+        env_path = os.path.join(_PROJECT_DIR, ".env")
+        raise OpenAIError(
+            "Missing OpenAI API key. Set OPENAI_API_KEY in the environment "
+            f"or create {env_path} with:\n"
+            "  OPENAI_API_KEY=sk-..."
+        )
+    return key
 
 
 def sha256_text(text: str) -> str:
@@ -135,8 +172,9 @@ class LLMClient:
         log_path: Optional[str] = None,
     ):
         self.model = model
+        _load_dotenv()
         self.client = OpenAI(
-            api_key=api_key or os.environ.get("OPENAI_API_KEY"),
+            api_key=_resolve_openai_key(api_key),
             base_url=base_url or os.environ.get("OPENAI_BASE_URL") or None,
         )
         self.max_retries = max_retries
