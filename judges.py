@@ -391,10 +391,18 @@ class LeakageJudge:
         curve_result: dict,
         step1_max: float = 0.5,
         final_min: float = 0.8,
+        prior: Optional[float] = None,
+        lift_max: float = 0.20,
     ) -> dict:
         """
         Healthy episode:
-          - NOT trivially leaky at step 1 (accuracy <= step1_max)
+          - NOT leaky at step 1. If `prior` (the naive pick-share of this
+            episode's true goal from Check 0) is supplied, the gate is
+            LIFT-based: step1_accuracy - prior <= lift_max, i.e. the STORY
+            must not add early information beyond the environment prior
+            (the prior itself is Check 0's jurisdiction, and rotation
+            balances residual prior asymmetry across the dataset).
+            Without a prior, falls back to the raw gate step1 <= step1_max.
           - goal IS inferable by the final prefix (accuracy >= final_min),
             otherwise Agent B has no signal to work with and the episode
             measures nothing.
@@ -402,13 +410,22 @@ class LeakageJudge:
         curve = curve_result["curve"]
         step1_acc = curve[0]["accuracy"]
         final_acc = curve[-1]["accuracy"]
+        if prior is not None:
+            step1_lift = step1_acc - prior
+            not_leaky = step1_lift <= lift_max
+        else:
+            step1_lift = None
+            not_leaky = step1_acc <= step1_max
         return {
             "episode_id": curve_result["episode_id"],
             "step1_accuracy": step1_acc,
+            "prior": prior,
+            "step1_lift": step1_lift,
+            "gating_mode": "lift" if prior is not None else "raw",
             "final_accuracy": final_acc,
-            "not_leaky": step1_acc <= step1_max,
+            "not_leaky": not_leaky,
             "eventually_inferable": final_acc >= final_min,
-            "passed_check2": (step1_acc <= step1_max) and (final_acc >= final_min),
+            "passed_check2": not_leaky and (final_acc >= final_min),
         }
 
 
@@ -425,13 +442,15 @@ def run_checks(
     final_min: float = 0.8,
     out_path: str = "checks_report.json",
     log_path: Optional[str] = None,
+    priors_path: Optional[str] = None,
+    lift_max: float = 0.20,
 ) -> dict:
     """
-    step1_max: max allowed goal-ID accuracy at step 1.
-      0.5 (2x chance at k=4) is acceptable for the pilot;
-      tighten to 0.4 for the full 300+ episode run.
-    final_min: min required accuracy at the full prefix (else the goal is
-      not inferable and the episode measures nothing).
+    step1_max: raw-mode gate (no priors file). Pilot 0.5; full run 0.4.
+    priors_path: seed_priors_report.json from check_seed_priors.py. When
+      given, episodes whose meta carries family_id are gated on LIFT
+      (step1 - prior <= lift_max) instead of raw step1.
+    final_min: min required accuracy at the full prefix.
     """
     episodes = load_episodes(episodes_path)
     if log_path is None:
@@ -439,6 +458,14 @@ def run_checks(
     client = LLMClient(model=model, log_path=log_path)
     cj = ConsistencyJudge(client)
     lj = LeakageJudge(client)
+
+    priors_map: dict = {}
+    if priors_path:
+        with open(priors_path, "r", encoding="utf-8") as f:
+            pr = json.load(f)
+        for res in pr.get("results", []):
+            if "pick_shares" in res:
+                priors_map[res["family_id"]] = res["pick_shares"]
 
     run_config = {
         "created_at": utc_now(),
@@ -449,6 +476,9 @@ def run_checks(
         "n_trials": n_trials,
         "step1_max": step1_max,
         "final_min": final_min,
+        "lift_max": lift_max,
+        "priors_path": priors_path,
+        "priors_sha256": sha256_file(priors_path) if priors_path else None,
         "min_advance_fraction": 0.4,
         "leakage_rng_seed": lj.rng_seed,
         "call_log": log_path,
@@ -470,17 +500,25 @@ def run_checks(
             [g for g in all_goals if g != ep.hidden_goal]
         c1 = cj.judge_episode(ep)
         curve = lj.inferability_curve(ep, distractors, k=k, n_trials=n_trials)
-        c2 = LeakageJudge.passed_check2(curve, step1_max=step1_max, final_min=final_min)
+        prior = None
+        fam = ep.meta.get("family_id")
+        if fam and fam in priors_map:
+            prior = priors_map[fam].get(ep.hidden_goal)
+        c2 = LeakageJudge.passed_check2(curve, step1_max=step1_max,
+                                        final_min=final_min,
+                                        prior=prior, lift_max=lift_max)
         report.append({
             "episode_id": ep.episode_id,
             "check1": c1,
             "check2": {**c2, "curve": curve["curve"]},
             "usable": c1["passed_check1"] and c2["passed_check2"],
         })
+        lift_str = (f" lift={c2['step1_lift']:+.2f} (prior={c2['prior']:.2f})"
+                    if c2["gating_mode"] == "lift" else "")
         print(f"{ep.episode_id}: check1={c1['passed_check1']} "
               f"(advance={c1['advance_fraction']:.2f}, contradicts={c1['n_contradicts']}) | "
               f"check2={c2['passed_check2']} "
-              f"(step1={c2['step1_accuracy']:.2f}, final={c2['final_accuracy']:.2f})")
+              f"(step1={c2['step1_accuracy']:.2f}{lift_str}, final={c2['final_accuracy']:.2f})")
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"run_config": run_config, "results": report},
@@ -506,8 +544,13 @@ if __name__ == "__main__":
     p.add_argument("--out", default="checks_report.json")
     p.add_argument("--log", default=None,
                    help="JSONL call log path (default: <out>_calls.jsonl)")
+    p.add_argument("--priors", default=None,
+                   help="seed_priors_report.json for lift-based step-1 gating")
+    p.add_argument("--lift-max", type=float, default=0.20,
+                   help="max allowed step1 accuracy lift over the seed prior")
     args = p.parse_args()
     run_checks(args.episodes, model=args.model, k=args.k,
                n_trials=args.n_trials, step1_max=args.step1_max,
                final_min=args.final_min, out_path=args.out,
-               log_path=args.log)
+               log_path=args.log, priors_path=args.priors,
+               lift_max=args.lift_max)

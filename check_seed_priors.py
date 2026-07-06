@@ -120,8 +120,11 @@ def main() -> None:
                    help="trials per seed/family (8+ recommended for share resolution)")
     p.add_argument("--prior-max", type=float, default=0.40,
                    help="legacy mode: max allowed prior accuracy (chance = 1/k)")
-    p.add_argument("--max-share", type=float, default=0.50,
-                   help="family mode: max allowed pick share for any single goal")
+    p.add_argument("--max-share", type=float, default=0.75,
+                   help="family mode: HARD ceiling on any single goal's pick "
+                        "share. Residual asymmetry below this is tolerated: "
+                        "rotation balances it across the dataset and Check 2's "
+                        "lift-based gate subtracts it per episode.")
     p.add_argument("--out", default="seed_priors_report.json")
     p.add_argument("--log", default=None)
     p.add_argument("--seed", type=int, default=29, help="rng seed")
@@ -138,12 +141,15 @@ def main() -> None:
     for seed in seeds:
         if "goal_family" in seed:
             r = family_pick_shares(client, seed, n_trials=args.n_trials, rng=rng)
-            r["passed_check0"] = r["max_share"] <= args.max_share
+            r["dead_members"] = [g for g, s in r["pick_shares"].items() if s == 0.0]
+            r["passed_check0"] = (r["max_share"] <= args.max_share
+                                  and not r["dead_members"])
             results.append(r)
             mark = "OK  " if r["passed_check0"] else "LEAK"
             shares = " ".join(f"g{i+1}={r['pick_shares'][g]:.2f}"
                               for i, g in enumerate(seed["goal_family"]))
-            print(f"[{mark}] {r['family_id']}: max_share={r['max_share']:.2f} | {shares}")
+            dead = (f" DEAD:{len(r['dead_members'])}" if r["dead_members"] else "")
+            print(f"[{mark}] {r['family_id']}: max_share={r['max_share']:.2f}{dead} | {shares}")
         else:
             r = prior_trials(client, seed, k=args.k, n_trials=args.n_trials, rng=rng)
             r["passed_check0"] = r["prior_accuracy"] <= args.prior_max
