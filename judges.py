@@ -29,6 +29,7 @@ Deliberate design decisions:
 
 Requires: pip install openai
 Env: OPENAI_API_KEY (and optionally OPENAI_BASE_URL for other providers).
+A `.env` file in the project root or cwd is loaded automatically if present.
 """
 
 from __future__ import annotations
@@ -80,6 +81,9 @@ def _resolve_openai_key(api_key: Optional[str]) -> str:
             "  OPENAI_API_KEY=sk-..."
         )
     return key
+
+
+_load_dotenv()
 
 
 def sha256_text(text: str) -> str:
