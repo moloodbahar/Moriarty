@@ -459,13 +459,17 @@ def run_checks(
     cj = ConsistencyJudge(client)
     lj = LeakageJudge(client)
 
+    # family_id -> {goal_text: naive pick share} from Check 0
+    # (goal keys stripped: whitespace drift must not silently break lookups)
     priors_map: dict = {}
     if priors_path:
         with open(priors_path, "r", encoding="utf-8") as f:
             pr = json.load(f)
         for res in pr.get("results", []):
             if "pick_shares" in res:
-                priors_map[res["family_id"]] = res["pick_shares"]
+                priors_map[res["family_id"]] = {
+                    g.strip(): s for g, s in res["pick_shares"].items()
+                }
 
     run_config = {
         "created_at": utc_now(),
@@ -501,9 +505,20 @@ def run_checks(
         c1 = cj.judge_episode(ep)
         curve = lj.inferability_curve(ep, distractors, k=k, n_trials=n_trials)
         prior = None
+        missing_prior_reason = None
         fam = ep.meta.get("family_id")
-        if fam and fam in priors_map:
-            prior = priors_map[fam].get(ep.hidden_goal)
+        if priors_map and fam:
+            if fam not in priors_map:
+                missing_prior_reason = "family_not_in_priors"
+            elif ep.hidden_goal.strip() not in priors_map[fam]:
+                missing_prior_reason = "goal_not_in_family_priors"
+            else:
+                prior = priors_map[fam][ep.hidden_goal.strip()]
+            if missing_prior_reason:
+                print(f"  WARNING {ep.episode_id}: no prior "
+                      f"({missing_prior_reason}, family={fam}) — "
+                      f"falling back to RAW step-1 gating. Check that the "
+                      f"priors file matches this seeds/episodes version.")
         c2 = LeakageJudge.passed_check2(curve, step1_max=step1_max,
                                         final_min=final_min,
                                         prior=prior, lift_max=lift_max)
@@ -511,6 +526,8 @@ def run_checks(
             "episode_id": ep.episode_id,
             "check1": c1,
             "check2": {**c2, "curve": curve["curve"]},
+            "missing_prior": missing_prior_reason is not None,
+            "missing_prior_reason": missing_prior_reason,
             "usable": c1["passed_check1"] and c2["passed_check2"],
         })
         lift_str = (f" lift={c2['step1_lift']:+.2f} (prior={c2['prior']:.2f})"
@@ -520,13 +537,22 @@ def run_checks(
               f"check2={c2['passed_check2']} "
               f"(step1={c2['step1_accuracy']:.2f}{lift_str}, final={c2['final_accuracy']:.2f})")
 
+    missing = [r["episode_id"] for r in report if r["missing_prior"]]
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump({"run_config": run_config, "results": report},
+        json.dump({"run_config": run_config,
+                   "missing_prior_episodes": missing,
+                   "results": report},
                   f, ensure_ascii=False, indent=2)
     usable = sum(r["usable"] for r in report)
     print(f"\nUsable episodes: {usable}/{len(report)}  →  {out_path}")
+    if priors_path and missing:
+        print(f"WARNING: {len(missing)} episode(s) fell back to RAW gating "
+              f"(missing prior): {missing}")
+        print("         If unexpected, the priors file is out of sync with "
+              "this episodes version (compare seeds_sha256 in both manifests).")
     print(f"All calls logged to: {log_path}")
     return {"run_config": run_config, "report": report,
+            "missing_prior_episodes": missing,
             "usable": usable, "total": len(report)}
 
 
