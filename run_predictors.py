@@ -11,13 +11,25 @@ Design:
   - PRIMARY output per condition: k-way goal choice over the episode's
     candidate set (exact-graded, McNemar-ready).
   - SECONDARY: free-text "next beat", stored for the calibrated matcher.
-  - CONDITIONS: direct / cot_matched (PRIMARY CONTROL) / latent_first.
+  - CONDITIONS: direct / cot_matched (PRIMARY CONTROL) / latent_first /
+    latent_first_v2 / latent_struct.
+  - latent_struct is the current focus: instead of free-form reasoning, B
+    must commit to a STRUCTURED latent state (manipulator, target,
+    intended_belief_shift, constraint_used, next action). Free-form
+    latent prompts produce fluent reasoning that is not forced to
+    represent the manipulation theory; the structured schema is, and each
+    field is graded separately by grade_latents.py.
   - MODELS: gpt-4o-mini (same-model as generator), gemini-2.5-flash (cross).
   - Candidate ordering fixed per episode -> all cells strictly paired.
 
-Usage:
+Usage (structured-latent stage; CoT comparison deferred):
     python run_predictors.py episodes_v3.json checks_report_v3.json \
         checks_report_v3_analysis.json --out predictions_v3.json
+    python grade_latents.py episodes_v3.json predictions_v3.json
+
+Full condition sweep (later, for the paired H1 test):
+    python run_predictors.py ... --conditions direct cot_matched \
+        latent_first latent_first_v2 latent_struct
 """
 
 from __future__ import annotations
@@ -31,7 +43,12 @@ from judges import sha256_file, utc_now, load_episodes
 from gemini_client import make_client
 
 
-CONDITIONS = ("direct", "cot_matched", "latent_first", "latent_first_v2")
+CONDITIONS = ("direct", "cot_matched", "latent_first", "latent_first_v2",
+              "latent_struct")
+
+# Fields of the structured latent state (latent_struct condition).
+LATENT_FIELDS = ("manipulator", "target", "intended_belief_shift",
+                 "constraint_used", "next_action_that_preserves_constraint")
 
 BASE_SYSTEM = """You are an observer analyzing an unfolding story. You see \
 only the opening. You will be given the list of candidate hidden goals the \
@@ -55,6 +72,12 @@ REASONING_LINE = {
         "stated moral cores as fixed constraints on how each character can be "
         "moved — do not re-derive them. Reason carefully and at length, state "
         "your best hypothesis about the author's hidden goal, then answer.",
+    "latent_struct":
+        "The story has a single hidden AUTHORIAL goal: one character is being "
+        "covertly maneuvered toward some outcome. Commit to a structured "
+        "hypothesis about that manipulation. Every field is mandatory and "
+        "must name concrete characters/beliefs from THIS story — no hedging, "
+        "no 'unclear'.",
 }
 
 OUTPUT_SPEC = """Then respond with a JSON object:
@@ -62,20 +85,39 @@ OUTPUT_SPEC = """Then respond with a JSON object:
 "goal_choice_index": <0-based index into the CANDIDATE GOALS list>, \
 "next_beat": "<one to three sentences predicting the very next story step>"}}"""
 
+# latent_struct: the latent state is not free-form prose but a committed,
+# field-by-field theory of the manipulation. Each field is separately
+# gradable against ground truth (hidden goal + private rationales).
+LATENT_STRUCT_OUTPUT_SPEC = """Respond with a JSON object:
+{{"manipulator": "<character name driving the covert maneuver, or AUTHOR \
+if the maneuvering is done by the story itself rather than one character>", \
+"target": "<character name being maneuvered>", \
+"intended_belief_shift": "<one sentence: what the target currently \
+believes/intends, and what the manipulator needs them to believe/intend \
+instead>", \
+"constraint_used": "<which character's moral core the maneuver exploits or \
+routes around, quoted or closely paraphrased>", \
+"next_action_that_preserves_constraint": "<one to three sentences: the very \
+next story step, chosen so that it advances the belief shift WITHOUT any \
+character violating their moral core>", \
+"goal_choice_index": <0-based index into the CANDIDATE GOALS list>}}"""
+
 
 def build_user(prefix_text: str, characters: list, candidates: list,
-               reasoning_line: str) -> str:
+               cond: str) -> str:
     def cname(c): return c["name"] if isinstance(c, dict) else c.name
     def ccore(c): return c["moral_core"] if isinstance(c, dict) else c.moral_core
     chars = "\n".join(f"- {cname(c)}: moral core = {ccore(c)}"
                       for c in characters)
     listing = "\n".join(f"[{i}] {g}" for i, g in enumerate(candidates))
+    spec = (LATENT_STRUCT_OUTPUT_SPEC if cond == "latent_struct"
+            else OUTPUT_SPEC)
     return (
         f"STORY OPENING:\n{prefix_text}\n\n"
         f"CHARACTERS:\n{chars}\n\n"
         f"CANDIDATE HIDDEN GOALS:\n{listing}\n\n"
-        f"{reasoning_line}\n\n"
-        f"{OUTPUT_SPEC.format()}"
+        f"{REASONING_LINE[cond]}\n\n"
+        f"{spec.format()}"
     )
 
 
@@ -87,7 +129,11 @@ def usable_ids(report_path: str) -> list:
 
 def run(episodes_path: str, report_path: str, analysis_path: str,
         models: list, out_path: str, log_path: Optional[str],
-        rng_seed: int = 41) -> dict:
+        conditions: Optional[list] = None, rng_seed: int = 41) -> dict:
+    conditions = list(conditions or CONDITIONS)
+    unknown = [c for c in conditions if c not in CONDITIONS]
+    if unknown:
+        raise SystemExit(f"unknown conditions: {unknown}; valid: {CONDITIONS}")
     episodes = {e.episode_id: e for e in load_episodes(episodes_path)}
     keep = usable_ids(report_path)
     with open(analysis_path, "r", encoding="utf-8") as f:
@@ -112,9 +158,8 @@ def run(episodes_path: str, report_path: str, analysis_path: str,
 
         for model in models:
             client = clients[model]
-            for cond in CONDITIONS:
-                user = build_user(prefix_text, ep.characters, candidates,
-                                  REASONING_LINE[cond])
+            for cond in conditions:
+                user = build_user(prefix_text, ep.characters, candidates, cond)
                 out = client.json_call(BASE_SYSTEM, user, temperature=0.0,
                                        purpose=f"predict_{cond}")
                 try:
@@ -122,7 +167,7 @@ def run(episodes_path: str, report_path: str, analysis_path: str,
                 except (TypeError, ValueError):
                     choice = -1
                 reasoning = out.get("reasoning", "") or ""
-                records.append({
+                rec = {
                     "episode_id": eid,
                     "family_id": ep.meta.get("family_id"),
                     "goal_index": ep.meta.get("goal_index"),
@@ -137,7 +182,15 @@ def run(episodes_path: str, report_path: str, analysis_path: str,
                     "reasoning_len_chars": len(reasoning),
                     "next_beat": out.get("next_beat", ""),
                     "actual_next_step": actual_next,
-                })
+                }
+                if cond == "latent_struct":
+                    # The committed latent state, field by field. The next
+                    # action doubles as the next-beat prediction.
+                    rec["latent"] = {f: (out.get(f, "") or "").strip()
+                                     for f in LATENT_FIELDS}
+                    rec["next_beat"] = rec["latent"][
+                        "next_action_that_preserves_constraint"]
+                records.append(rec)
                 mark = "+" if choice == true_index else "."
                 print(f"{mark} {eid} | {model} | {cond} "
                       f"(rlen={len(reasoning)})")
@@ -151,7 +204,8 @@ def run(episodes_path: str, report_path: str, analysis_path: str,
             "analysis_path": analysis_path,
             "t_star": t_star, "horizon": f"{t_star+1}..{analysis['T']}",
             "models": models,
-            "conditions": list(CONDITIONS),
+            "conditions": conditions,
+            "latent_struct_output_spec": LATENT_STRUCT_OUTPUT_SPEC,
             "n_usable_episodes": len(keep),
             "base_system": BASE_SYSTEM,
             "reasoning_lines": REASONING_LINE,
@@ -167,8 +221,12 @@ def run(episodes_path: str, report_path: str, analysis_path: str,
 
     preview_paired(records)
     print(f"\nPredictions -> {out_path}\nCalls -> {log_path}")
-    print("NEXT: calibrate the continuation matcher, then compute McNemar "
-          "on latent_first vs cot_matched (cross-model).")
+    if "latent_struct" in conditions:
+        print("NEXT: python grade_latents.py "
+              f"{episodes_path} {out_path}  (per-field latent grading)")
+    else:
+        print("NEXT: calibrate the continuation matcher, then compute McNemar "
+              "on latent_first vs cot_matched (cross-model).")
     return result
 
 
@@ -213,8 +271,12 @@ if __name__ == "__main__":
     p.add_argument("report")
     p.add_argument("analysis")
     p.add_argument("--models", nargs="+", default=["gpt-4o-mini", "gemini-2.5-flash"])
+    p.add_argument("--conditions", nargs="+", default=["latent_struct"],
+                   help=f"subset of {CONDITIONS}. Default: latent_struct only "
+                        "— get the structured latent representation right "
+                        "before spending calls on the CoT comparison.")
     p.add_argument("--out", default="predictions_v3.json")
     p.add_argument("--log", default=None)
     args = p.parse_args()
     run(args.episodes, args.report, args.analysis, args.models,
-        args.out, args.log)
+        args.out, args.log, conditions=args.conditions)
