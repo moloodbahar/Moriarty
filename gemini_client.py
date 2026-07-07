@@ -18,14 +18,57 @@ from typing import Optional
 from judges import CallLogger, utc_now
 
 
+def _escape_control_chars_in_json_strings(text: str) -> str:
+    """Escape literal control chars inside JSON string literals."""
+    out: list[str] = []
+    in_string = False
+    escape = False
+    for ch in text:
+        if escape:
+            out.append(ch)
+            escape = False
+            continue
+        if ch == "\\" and in_string:
+            out.append(ch)
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            out.append(ch)
+            continue
+        if in_string and ord(ch) < 32:
+            if ch == "\n":
+                out.append("\\n")
+            elif ch == "\r":
+                out.append("\\r")
+            elif ch == "\t":
+                out.append("\\t")
+            else:
+                out.append(" ")
+            continue
+        out.append(ch)
+    return "".join(out)
+
+
 def _extract_json(text: str) -> dict:
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        m = re.search(r"\{.*\}", text, re.DOTALL)
-        if not m:
-            raise
-        return json.loads(m.group(0))
+    candidates = [text, _escape_control_chars_in_json_strings(text)]
+    last_err: json.JSONDecodeError | None = None
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError as e:
+            last_err = e
+    m = re.search(r"\{.*\}", text, re.DOTALL)
+    if m:
+        blob = m.group(0)
+        for candidate in (blob, _escape_control_chars_in_json_strings(blob)):
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError as e:
+                last_err = e
+    if last_err is not None:
+        raise last_err
+    raise json.JSONDecodeError("no JSON object found", text, 0)
 
 
 class GeminiClient:
