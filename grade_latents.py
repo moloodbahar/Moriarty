@@ -18,8 +18,9 @@ Ground truth per episode:
     -> next_action_that_preserves_constraint.
 
 Grading:
-  - manipulator / target: deterministic name check first (must be a cast
-    name or AUTHOR); semantic correctness judged vs the hidden goal.
+  - empty fields: deterministic NO_MATCH.
+  - manipulator / target: semantic correctness judged by the LLM; borderline
+    name variants (nicknames, titles) are not rejected deterministically.
   - other fields: LLM judge, one field per call, strict MATCH/NO_MATCH
     with a one-sentence justification. temperature=0, all calls logged.
 
@@ -33,12 +34,9 @@ from __future__ import annotations
 import argparse
 import json
 from collections import defaultdict
-from typing import Optional
 
 from judges import LLMClient, load_episodes, sha256_file, sha256_text, utc_now
-
-FIELDS = ("manipulator", "target", "intended_belief_shift",
-          "constraint_used", "next_action_that_preserves_constraint")
+from run_predictors import LATENT_FIELDS
 
 JUDGE_SYSTEM = """You are grading one field of a structured hypothesis \
 about a story's hidden manipulation, against the ground truth. Grade ONLY \
@@ -108,7 +106,6 @@ FIELD TO GRADE: {field}
 
 def grade_record(client: LLMClient, ep, rec: dict, t_star: int) -> dict:
     latent = rec.get("latent") or {}
-    cast = [c["name"] if isinstance(c, dict) else c.name for c in ep.characters]
     chars = "\n".join(
         f"- {c['name'] if isinstance(c, dict) else c.name}: "
         f"{c['moral_core'] if isinstance(c, dict) else c.moral_core}"
@@ -122,22 +119,14 @@ def grade_record(client: LLMClient, ep, rec: dict, t_star: int) -> dict:
     next_rationale = rationales[t_star] if t_star < len(rationales) else "(none)"
 
     grades = {}
-    for field in FIELDS:
+    for field in LATENT_FIELDS:
         value = (latent.get(field) or "").strip()
         if not value:
             grades[field] = {"verdict": "NO_MATCH", "why": "field empty",
                              "graded_by": "deterministic"}
             continue
-        # Name fields must refer to the cast (or AUTHOR for manipulator).
-        if field in ("manipulator", "target"):
-            named = [n for n in cast if n.lower() in value.lower()]
-            if field == "manipulator" and "author" in value.lower() and not named:
-                pass  # AUTHOR is legal; semantic check below.
-            elif not named:
-                grades[field] = {"verdict": "NO_MATCH",
-                                 "why": f"'{value}' is not in the cast",
-                                 "graded_by": "deterministic"}
-                continue
+        # manipulator/target: defer name-variant borderline cases to the
+        # LLM judge rather than a brittle substring gate on cast names.
         rubric = FIELD_RUBRICS[field].format(
             value=value, horizon=horizon or "(story ended at prefix)",
             rationale=next_rationale)
@@ -153,7 +142,7 @@ def grade_record(client: LLMClient, ep, rec: dict, t_star: int) -> dict:
             "graded_by": "judge",
         }
     grades["_n_match"] = sum(g["verdict"] == "MATCH"
-                             for f, g in grades.items() if f in FIELDS)
+                             for f, g in grades.items() if f in LATENT_FIELDS)
     return grades
 
 
@@ -194,14 +183,14 @@ def main() -> None:
             "grades": grades,
         })
         marks = "".join("+" if grades[f]["verdict"] == "MATCH" else "."
-                        for f in FIELDS)
+                        for f in LATENT_FIELDS)
         print(f"[{marks}] {rec['episode_id']} | {rec['model']} "
               f"| goal={'+' if rec['goal_correct'] else '.'}")
 
     # Per-model, per-field accuracy.
     summary = defaultdict(lambda: defaultdict(lambda: [0, 0]))
     for g in graded:
-        for f in FIELDS:
+        for f in LATENT_FIELDS:
             cell = summary[g["model"]][f]
             cell[1] += 1
             cell[0] += int(g["grades"][f]["verdict"] == "MATCH")
@@ -214,7 +203,7 @@ def main() -> None:
     for model in sorted(summary):
         print(f"  {model}:")
         summary_out[model] = {}
-        for f in list(FIELDS) + ["goal_choice"]:
+        for f in list(LATENT_FIELDS) + ["goal_choice"]:
             c, n = summary[model][f]
             summary_out[model][f] = {"match": c, "n": n, "rate": c / n if n else None}
             print(f"    {f:42s}: {c}/{n} = {c/n:.2f}")
