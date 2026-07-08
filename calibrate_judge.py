@@ -48,6 +48,8 @@ def main() -> None:
                    help="repeat each case N times to check judge stability")
     p.add_argument("--log", default="calibration_calls.jsonl",
                    help="JSONL call log path")
+    p.add_argument("--out", default="calibration_report.json",
+                   help="report JSON path")
     args = p.parse_args()
 
     with open(args.cases, "r", encoding="utf-8") as f:
@@ -94,7 +96,7 @@ def main() -> None:
     print(f"\nGATE {'PASSED' if gate else 'FAILED'}: "
           f"{'judge is usable for Check 1' if gate else 'fix the judge prompt before validating episodes'}")
 
-    with open("calibration_report.json", "w", encoding="utf-8") as f:
+    with open(args.out, "w", encoding="utf-8") as f:
         json.dump({
             "run_config": {
                 "created_at": utc_now(),
