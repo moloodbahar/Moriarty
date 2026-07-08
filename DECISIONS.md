@@ -1,5 +1,21 @@
 # DECISIONS.md — instrument and design decisions, dated
 
+## 2026-07-07 — OUTCOME (Level 2): pre-registered hypothesis falsified; prompting route closed
+
+Paired latent_first vs cot_matched at Level 2, same 23 episodes, t*=2:
+gemini-2.5-flash (cross-model, designated primary) 0-vs-5 discordant,
+p=0.062; gpt-4o-mini 2-vs-5, p=0.453. Accuracies: LF 0.26/0.35 vs CoT
+0.48/0.48; Direct 0.43/0.52. The information-saturation explanation of the
+Level-1 null predicted the gap would move toward LF under partial
+observability; it moved away. Secondary: hidden-core inference is 0.76-0.80
+in ALL conditions (n=41 scored cells per condition-model) — trait
+inference is easy, condition-invariant, and dissociated from goal
+inference. Per the pre-registration above: the prompting-route conclusion
+is negative at both levels; the pilot write-up covers both; the training
+route (SFT/RL) is NOT automatically licensed — its go/no-go criterion
+(prompted latent inference showing traction) was not met and any training
+proposal must be re-justified as a new hypothesis.
+
 ## 2026-07-07 — PRE-REGISTRATION: Level-2 (partial observability) pilot
 
 Motivated BY the Level-1 null, stated before any Level-2 call is made:

@@ -22,6 +22,15 @@ before any predictor sees it. Full decision log with dates: `DECISIONS.md`.
 
 ## Pipeline (run in this order)
 
+**Recommended — one self-contained results folder:**
+
+```bash
+python run_pipeline.py --name my_fresh_run
+# -> results/my_fresh_run/  (all reports, logs, plots; see RUN.json manifest)
+```
+
+Or step-by-step (outputs land in the repo root unless you pass `--out`):
+
 ```bash
 # 0. Judge calibration gate (accuracy >= 7/8 AND perfect CONTRADICTS recall)
 python calibrate_judge.py calibration_cases.json --repeats 3
