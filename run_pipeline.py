@@ -8,6 +8,7 @@ find later.
 Usage:
     python run_pipeline.py
     python run_pipeline.py --name pilot_v3_fresh
+    python run_pipeline.py --name pilot_v3_fresh --force   # reuse existing folder
     python run_pipeline.py --skip-l1 --skip-l2   # env + checks only
     python run_pipeline.py --dry-run
 
@@ -68,6 +69,9 @@ def main() -> None:
                    help="skip Level-2 predictors (run_predictors_v4.py)")
     p.add_argument("--dry-run", action="store_true",
                    help="print commands only, do not execute")
+    p.add_argument("--force", action="store_true",
+                   help="reuse an existing results/<name>/ folder (overwrites "
+                        "artifacts as each step runs)")
     args = p.parse_args()
 
     run_name = args.name or utc_stamp()
@@ -75,7 +79,13 @@ def main() -> None:
     py = sys.executable
 
     if not args.dry_run:
-        run_dir.mkdir(parents=True, exist_ok=False)
+        if run_dir.exists() and not args.force:
+            raise SystemExit(
+                f"Run folder already exists: {run_dir}\n"
+                "Pick a new --name, delete that folder, or pass --force to "
+                "reuse it (steps will overwrite files as they complete)."
+            )
+        run_dir.mkdir(parents=True, exist_ok=True)
 
     # --- paths (all under run_dir) ---
     paths = {
