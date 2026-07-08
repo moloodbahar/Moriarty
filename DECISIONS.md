@@ -1,5 +1,40 @@
 # DECISIONS.md — instrument and design decisions, dated
 
+## 2026-07-08 — EXPLORATORY prefix sweep: metrics stated before the run
+
+Labeled exploratory (the pilot's pre-registered questions are closed; this
+tests the premature-commitment MECHANISM hypothesis from the recovered
+traces). Same 23 episodes, Level-2 masking, prefixes 2–6 in one internally
+paired run, conditions direct/cot_matched/latent_first, 690 calls.
+Pre-stated metrics against branch steps from branch_points.py:
+RECOVERY = P(correct at first post-branch prefix | wrong at last
+pre-branch prefix); LOCK-IN = P(same wrong choice repeated post-branch |
+wrong pre-branch). Prediction on record: latent_first shows lower recovery
+and higher lock-in than cot_matched. Noted constraints: 9 episodes branch
+at step 2 (= min prefix) and have no pre-branch observation, so recovery
+denominators are small (~≤14 per model-condition) — directional readout
+only; and the branch-point critique does NOT extend to the LF-vs-CoT
+deficit, which was measured paired at identical prefixes (horizon choice
+explains the absent deliberation dividend, not the LF disadvantage).
+
+## 2026-07-07 — OUTCOME: prior-robustness re-gate; conclusions unchanged
+
+User-initiated audit verified the full hash chain (seeds_v3_1 → episodes_v3
+→ n=12 priors → checks_report_v3 → predictions) with zero mismatches and
+zero used episodes failing episode-level gates. Known weakness addressed:
+priors re-measured at n=24 (seed_priors_v3_1_n24.json) and the stored
+curves re-gated (regate.py, zero new leakage calls): usable 23→22, flips
+= f03_product_team_g4 (in; conservative exclusion under n=12 dead-member
+prior; no predictions exist for it and none are added post hoc),
+f06_classroom_g1 (out; lift 0.18–0.22 straddles the 0.20 gate),
+f08_wedding_g3 (out; prior 0.83→0.33 — run-level prior instability,
+recorded as an instrument finding). Sensitivity on the 21-episode robust
+core: all paired directions unchanged; designated primary identical
+(L2 gemini 0-vs-5, p=0.062); L2 4o-mini 2-vs-4 (p=0.688); L1 LF-v2
+1-vs-4 (p=0.375). Pilot conclusions stand. Confirmatory standards
+adopted: n=24+ priors averaged over ≥2 independent runs, versioned
+output filenames, git for the working directory.
+
 ## 2026-07-07 — OUTCOME (Level 2): pre-registered hypothesis falsified; prompting route closed
 
 Paired latent_first vs cot_matched at Level 2, same 23 episodes, t*=2:
