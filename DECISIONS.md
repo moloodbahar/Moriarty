@@ -1,5 +1,89 @@
 # DECISIONS.md — instrument and design decisions, dated
 
+## 2026-07-09 — OUTCOME: interpretive capture localized; five validated triggers (verified)
+
+Logprob instrument (goal_distribution.py, exact posteriors via
+top_logprobs, 4-permutation averaging, t0 baseline, reliability gates)
+run at steps + clause level, naive and Agent-B-information observers, on
+full_run_jul9. All review-claimed numbers independently verified from
+raw outputs. Cross-observer: wrong-collapse detected by both in 12
+episodes, same step 11/12, SAME SPECIFIC WRONG GOAL 11/11; uncertainty
+creation same step 8/8; resolution same step 10/12. Clause level:
+within-observer add=delete agreement (wrong triggers) 8/15 naive, 13/16
+agent_b. Strict two-tier filter -> validated_triggers.json: 5 VALIDATED
+wrong-attractor trigger clauses (f01_charity_g2@1, f02_library_g2@1,
+f03_product_team_g3@2, f04_chess_club_g3@1, f08_wedding_g3@1; dp_target
+up to +0.87 naive / +0.74 agent_b, deletion reverses), 6 candidates with
+named failed checks. On-record prediction confirmed: B's information
+state enters the same wrong trajectory the story digs, at the same step,
+onto the same goal, via the same clause in the validated subset. New
+observation: measurable resolution lag (f03: naive resolves t4, agent_b
+t5). Claim boundaries recorded: clause-level output-distribution probe
+(not token-level, not internals, not B's reasoning trace); no unique-
+causality claim from AGREE; object is goal-hypothesis distribution
+("interpretive branching"), not free-form continuation diversity.
+Protocol-relativity caveats: f05_estate_g2 not committed-wrong and
+f04_chess_club_g4 unresolved (q=0.19 at t6) under this protocol despite
+old-gate passage — exemplar figures must be labeled per instrument;
+confirmatory gating should use the logprob instrument.
+
+## 2026-07-09 — OUTCOME: exploratory sweep — partial support, one reframe
+
+Against the pre-stated criteria (LF lower recovery AND higher lock-in
+than CoT, both models): PARTIAL. gpt-4o-mini full signature (recovery
+0.38 vs 0.71; lock-in 0.62 vs 0.29); gemini recovery-only (0.60 vs 0.83;
+lock-in 2/10 vs 2/12 = null). Not confirmation; directional in one model.
+REFRAME (recorded): sweep calls are stateless across prefixes, so lock-in
+measures per-call re-derivation of the same wrong goal from post-branch
+text — an instruction-induced integration failure, not cross-time
+anchoring; the multi-turn (belief-persistence) version is a distinct v5
+design. STRONGEST PATTERN (exploratory, consistent both models):
+branch-aligned curves show LF lagging at +1..+3 after information release
+(e.g., +1: 0.75 vs 0.88/0.88 and 0.75 vs 0.81/0.81) — the deficit is
+slower post-branch integration, not worse reading generally. Secondary:
+CoT is best recoverer in both models (deliberation dividend is
+branch-localized — refines F2); self-reported confidence uninformative
+(0.85±0.05 across accuracy 0.14–1.00, identical across conditions).
+
+## 2026-07-09 — AMENDMENT to sweep pre-registration (before results known)
+
+The exploratory sweep runs on the NEW full_run_jul9 sample (21 usable
+episodes, fresh generation, n=24 priors) with branch points computed from
+that run's checks report — not the original 23 episodes named in the
+2026-07-08 entry. Deviation reason: the replication run superseded the old
+sample as the current dataset; testing the mechanism on episodes the
+predictors have never touched is strictly cleaner. Metrics, prediction,
+and constraints from the 2026-07-08 entry unchanged. Sweep-side note: 7
+of 21 episodes branch at step 2 (= min prefix) and enter no recovery
+denominator.
+
+## 2026-07-09 — OUTCOME: independent replication (full_run_jul9)
+
+Full pipeline rerun end-to-end on freshly generated episodes (same
+seeds_v3_1, same prompts, n=24 priors, versioned results/ folder).
+ENVIRONMENT REPLICATED: usable 21/40 (was 23/40); pooled curve
+0.17→0.55→0.63→0.66→0.79→0.99, t*=2 by the same rule; 16/21 usable
+episodes below chance at step 1 (was 18/23); failure walls again
+two-sided (9 lift, 9 unreachable); calibration 8/8 stable; constraint
+exercise replicated (18 low cores, again concentrated on negative
+constraints; f02_library_g1 hit the zero-scorable-hidden-cores edge case,
+handled as designed); branch structure replicated (bimodal: 7 at step 2,
+9 at steps 5–6; committed-wrong 9/21).
+L2 DEFICIT REPLICATED: latent_first vs cot_matched paired — gemini
+1-vs-5 (was 0-vs-5), gpt-4o-mini 2-vs-4 (was 2-vs-5). Four cells, two
+independent samples, one direction. Exploratory post-hoc pool (gemini
+across samples): 1-vs-10, exact p≈0.012.
+L1 DID NOT REPLICATE IN EITHER DIRECTION: new-sample gemini L1 shows
+LF-v1 5-vs-1 OVER CoT (CoT collapsed to 0.33) — the same comparison has
+now produced 0-vs-4, 2-vs-3, and 5-vs-1 across three runs. Conclusion:
+at Level 1 there is no stable ordering among reasoning conditions at
+this n with these models; single-run L1 directions (including ones
+favoring our hypotheses) must not be cited. Stable facts only: Direct
+never loses (both levels, all runs); LF loses at L2 (both samples).
+DOWNGRADED: rotation-position attrition skew (7/8/3/5 old vs 4/7/5/5
+new) does not track positions across samples — sampling noise, not a
+systematic confound; report claim softened accordingly.
+
 ## 2026-07-08 — EXPLORATORY prefix sweep: metrics stated before the run
 
 Labeled exploratory (the pilot's pre-registered questions are closed; this
