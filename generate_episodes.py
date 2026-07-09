@@ -221,8 +221,8 @@ def main() -> None:
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-    print(f"\n{len(episodes)} episodes → {args.out}")
-    print(f"Manifest → {manifest_path}")
+    print(f"\n{len(episodes)} episodes -> {args.out}")
+    print(f"Manifest -> {manifest_path}")
     print(f"All calls logged to: {log_path}")
     print("Next: python judges.py " + args.out)
 
