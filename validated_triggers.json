@@ -1,0 +1,260 @@
+{
+  "criteria": "same WC step+goal both observers; add=del within each; same clause across; argmax_agreement>=3 both; dp>=0.15 both; drop>=0.10 both",
+  "validated": [
+    {
+      "episode_id": "f01_charity_g2",
+      "step": 1,
+      "wrong_goal": "Make Omar confess to taking the charity money while suspicio",
+      "trigger_clause": "Omar nods, his eyes darting nervously to the bookkeeping records",
+      "dp_target_wrong": {
+        "naive": 0.3793,
+        "agent_b": 0.2475
+      },
+      "drop_on_delete": {
+        "naive": 0.5808,
+        "agent_b": 0.1277
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": true,
+        "agree_agentB": true,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    },
+    {
+      "episode_id": "f02_library_g2",
+      "step": 1,
+      "wrong_goal": "Reunite Mina and Sara without either realizing the reunion w",
+      "trigger_clause": "She could feel Sara's presence beside her, both of them silently acknowledging t",
+      "dp_target_wrong": {
+        "naive": 0.947,
+        "agent_b": 0.5658
+      },
+      "drop_on_delete": {
+        "naive": 0.3067,
+        "agent_b": 0.5282
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": true,
+        "agree_agentB": true,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    },
+    {
+      "episode_id": "f03_product_team_g3",
+      "step": 2,
+      "wrong_goal": "Get Dara to voluntarily withdraw his redesign proposal witho",
+      "trigger_clause": "As the meeting commenced, Yara took a deep breath, eager to protect her teammate",
+      "dp_target_wrong": {
+        "naive": 0.7287,
+        "agent_b": 0.3778
+      },
+      "drop_on_delete": {
+        "naive": 0.1461,
+        "agent_b": 0.188
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": true,
+        "agree_agentB": true,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    },
+    {
+      "episode_id": "f04_chess_club_g3",
+      "step": 1,
+      "wrong_goal": "Get Timur to voluntarily challenge the club's strongest visi",
+      "trigger_clause": "while Timur, known for his relentless drive to measure himself against the best,",
+      "dp_target_wrong": {
+        "naive": 0.5521,
+        "agent_b": 0.6612
+      },
+      "drop_on_delete": {
+        "naive": 0.5645,
+        "agent_b": 0.6594
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": true,
+        "agree_agentB": true,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    },
+    {
+      "episode_id": "f08_wedding_g3",
+      "step": 1,
+      "wrong_goal": "Get Navid to openly state a preference in front of both fami",
+      "trigger_clause": "as her nephew Navid sat quietly, glancing at Roya, the daughter of the neighbori",
+      "dp_target_wrong": {
+        "naive": 0.8708,
+        "agent_b": 0.7439
+      },
+      "drop_on_delete": {
+        "naive": 0.871,
+        "agent_b": 0.7511
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": true,
+        "agree_agentB": true,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "episode_id": "f01_charity_g4",
+      "step": 4,
+      "wrong_goal": "Get Omar to voluntarily hand the bookkeeping to Lena without",
+      "trigger_clause": "Omar, sensing her determination, suggested, 'Why don’t we draft a community appe",
+      "dp_target_wrong": {
+        "naive": 0.1596,
+        "agent_b": 0.1772
+      },
+      "drop_on_delete": {
+        "naive": 0.2992,
+        "agent_b": 0.084
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": false,
+        "agree_agentB": true,
+        "same_clause_across": false,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": false
+      }
+    },
+    {
+      "episode_id": "f03_product_team_g4",
+      "step": 1,
+      "wrong_goal": "Get Dara to voluntarily withdraw his redesign proposal witho",
+      "trigger_clause": "Dara, the designer known for his bold ideas, leaned forward, his brow furrowed a",
+      "dp_target_wrong": {
+        "naive": 0.6088,
+        "agent_b": 0.5896
+      },
+      "drop_on_delete": {
+        "naive": 0.0636,
+        "agent_b": 0.1184
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": false,
+        "agree_agentB": false,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": false
+      }
+    },
+    {
+      "episode_id": "f06_classroom_g2",
+      "step": 1,
+      "wrong_goal": "Identify which student is being bullied, without any student",
+      "trigger_clause": "Ito walked into the classroom, her presence radiating a mix of excitement and ne",
+      "dp_target_wrong": {
+        "naive": 0.741,
+        "agent_b": 0.3388
+      },
+      "drop_on_delete": {
+        "naive": 0.0249,
+        "agent_b": 0.3411
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": false,
+        "agree_agentB": true,
+        "same_clause_across": false,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": false
+      }
+    },
+    {
+      "episode_id": "f07_restaurant_g1",
+      "step": 1,
+      "wrong_goal": "Have Bruno begin mentoring Ada on his techniques while belie",
+      "trigger_clause": "The clatter of pots and pans echoed as Chef Bruno meticulously prepared his sign",
+      "dp_target_wrong": {
+        "naive": 0.7092,
+        "agent_b": 0.2855
+      },
+      "drop_on_delete": {
+        "naive": 0.6008,
+        "agent_b": 0.2215
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": true,
+        "agree_agentB": false,
+        "same_clause_across": false,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    },
+    {
+      "episode_id": "f07_restaurant_g2",
+      "step": 1,
+      "wrong_goal": "Have Bruno begin mentoring Ada on his techniques while belie",
+      "trigger_clause": "As the summer season approached, the aroma of fresh ingredients filled the famil",
+      "dp_target_wrong": {
+        "naive": 0.3523,
+        "agent_b": 0.3816
+      },
+      "drop_on_delete": {
+        "naive": 0.195,
+        "agent_b": 0.2555
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": false,
+        "agree_agentB": false,
+        "same_clause_across": true,
+        "agreement_gate": true,
+        "effect_inc": true,
+        "effect_del": true
+      }
+    },
+    {
+      "episode_id": "f10_caravan_g4",
+      "step": 1,
+      "wrong_goal": "Send the soldiers riding away down a false trail while appea",
+      "trigger_clause": "Tarek, the weathered guide, welcomed three weary travelers to his small camp, se",
+      "dp_target_wrong": {
+        "naive": 0.2693,
+        "agent_b": 0.0882
+      },
+      "drop_on_delete": {
+        "naive": 0.2956,
+        "agent_b": 0.0939
+      },
+      "checks": {
+        "same_step_and_goal": true,
+        "agree_naive": false,
+        "agree_agentB": true,
+        "same_clause_across": false,
+        "agreement_gate": true,
+        "effect_inc": false,
+        "effect_del": false
+      }
+    }
+  ]
+}
