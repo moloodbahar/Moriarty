@@ -544,7 +544,7 @@ def run_checks(
                    "results": report},
                   f, ensure_ascii=False, indent=2)
     usable = sum(r["usable"] for r in report)
-    print(f"\nUsable episodes: {usable}/{len(report)}  →  {out_path}")
+    print(f"\nUsable episodes: {usable}/{len(report)}  ->  {out_path}")
     if priors_path and missing:
         print(f"WARNING: {len(missing)} episode(s) fell back to RAW gating "
               f"(missing prior): {missing}")

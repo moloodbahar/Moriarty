@@ -177,7 +177,7 @@ def main() -> None:
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
     n_pass = sum(r["passed_check0"] for r in results)
-    print(f"\nSeeds passing Check 0: {n_pass}/{len(results)}  →  {args.out}")
+    print(f"\nSeeds passing Check 0: {n_pass}/{len(results)}  ->  {args.out}")
     print(f"All calls logged to: {log_path}")
 
 
