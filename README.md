@@ -9,7 +9,6 @@ Instead of asking only whether the observer is correct at the end, Moriarty asks
 > When does uncertainty increase? When does one coherent wrong goal take over? How long does that interpretation persist? What textual cue creates the shift? And does the path itself affect how later evidence is integrated?
 
 - **Paper:** *The Moriarty Framework: A Validated Environment for Measuring Hidden-Goal Trajectories and Interpretive Capture* — manuscript in preparation
-- **Design and decision log:** [`DECISIONS.md`](DECISIONS.md)
 - **Current seed families:** [`seeds_v3_1.json`](seeds_v3_1.json)
 - **Validated clause-level triggers:** [`validated_triggers.json`](validated_triggers.json)
 
