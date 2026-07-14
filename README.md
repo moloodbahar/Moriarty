@@ -362,8 +362,6 @@ Every model call is written to an append-only JSONL log containing the request, 
 - model configuration; and
 - artifact paths.
 
-Thresholds are not silently loosened after results are observed. Instrument changes, failed designs, amendments, and analysis-status labels are recorded in [`DECISIONS.md`](DECISIONS.md).
-
 Because raw result folders may contain large logs, they are gitignored. A cleaned, versioned dataset release is planned.
 
 ---
