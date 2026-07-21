@@ -118,6 +118,9 @@ class OpenWeightsProbe:
                 {"role": "user", "content": user}]
         ids = self.tok.apply_chat_template(
             msgs, add_generation_prompt=True, return_tensors="pt")
+        # transformers>=5 returns BatchEncoding; older returns a Tensor.
+        if not hasattr(ids, "shape"):
+            ids = ids["input_ids"]
         if ids.shape[1] > config.OPENWEIGHTS_MAX_TOKENS_CTX:
             raise ValueError(f"prompt too long: {ids.shape[1]} tokens")
         return ids.to(self.model.device)

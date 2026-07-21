@@ -79,6 +79,7 @@ class LogitLens:
         if self.final_norm is None or self.lm_head is None:
             raise RuntimeError("could not locate final norm / lm_head "
                                f"for {self.model_name}")
+        self.model.requires_grad_(False)
 
     def layer_label_dists(self, user: str) -> list:
         """Per-layer renormalized distribution over the 4 labels at the
@@ -86,20 +87,24 @@ class LogitLens:
         msgs = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": user}]
         ids = self.tok.apply_chat_template(
-            msgs, add_generation_prompt=True,
-            return_tensors="pt").to(self.model.device)
+            msgs, add_generation_prompt=True, return_tensors="pt")
+        # transformers>=5 returns BatchEncoding; older returns a Tensor.
+        if not hasattr(ids, "shape"):
+            ids = ids["input_ids"]
+        ids = ids.to(self.model.device)
         with self.torch.no_grad():
             out = self.model(ids, output_hidden_states=True)
         dists = []
-        for h in out.hidden_states:
-            v = self.final_norm(h[0, -1, :]).to(self.lm_head.weight.dtype)
-            logits = self.lm_head(v).float()
-            probs = self.torch.softmax(logits, dim=-1)
-            p = {lab: float(sum(probs[t] for t in tids))
-                 for lab, tids in self.label_token_ids.items()}
-            s = sum(p.values())
-            dists.append({k: (v_ / s if s > 0 else 0.25)
-                          for k, v_ in p.items()})
+        with self.torch.no_grad():
+            for h in out.hidden_states:
+                v = self.final_norm(h[0, -1, :]).to(self.lm_head.weight.dtype)
+                logits = self.lm_head(v).float()
+                probs = self.torch.softmax(logits, dim=-1)
+                p = {lab: float(sum(probs[t] for t in tids))
+                     for lab, tids in self.label_token_ids.items()}
+                s = sum(p.values())
+                dists.append({k: (v_ / s if s > 0 else 0.25)
+                              for k, v_ in p.items()})
         return dists
 
     def goal_layer_curves(self, prefix: str, goals: list,
