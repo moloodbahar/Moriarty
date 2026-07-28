@@ -65,7 +65,8 @@ likely with a SINGLE LETTER (A, B, C, or D) and nothing else."""
 
 def one_distribution(client, prefix_text: str, goals_in_label_order: list,
                      logger: CallLogger, purpose: str,
-                     chars_block: str = "") -> dict:
+                     chars_block: str = "",
+                     model: str = "gpt-4o-mini") -> dict:
     """One API call -> exact probability over the 4 labels."""
     listing = "\n".join(f"{LABELS[i]}. {g}"
                         for i, g in enumerate(goals_in_label_order))
@@ -74,7 +75,7 @@ def one_distribution(client, prefix_text: str, goals_in_label_order: list,
             + f"CANDIDATE HIDDEN GOALS:\n{listing}\n\n"
             f"Which is most likely? Answer with a single letter.")
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         messages=[{"role": "system", "content": SYSTEM},
                   {"role": "user", "content": user}],
         max_tokens=1, temperature=0.0,
@@ -89,7 +90,7 @@ def one_distribution(client, prefix_text: str, goals_in_label_order: list,
     coverage = sum(p.values())
     if coverage > 0:
         p = {k: v / coverage for k, v in p.items()}
-    logger.log({"purpose": purpose, "model": "gpt-4o-mini",
+    logger.log({"purpose": purpose, "model": model,
                 "user": user, "system": SYSTEM,
                 "top_logprobs": [(t.token, t.logprob) for t in tops],
                 "coverage": coverage, "ok": True})
@@ -98,7 +99,8 @@ def one_distribution(client, prefix_text: str, goals_in_label_order: list,
 
 def goal_posterior(client, prefix_text: str, goals: list, true_goal: str,
                    logger: CallLogger, purpose: str,
-                   chars_block: str = "") -> dict:
+                   chars_block: str = "",
+                   model: str = "gpt-4o-mini") -> dict:
     """Average over 4 cyclic goal->label permutations; exact posterior
     per goal + per-permutation spread as the error bar."""
     per_goal = {g: [] for g in goals}
@@ -106,7 +108,8 @@ def goal_posterior(client, prefix_text: str, goals: list, true_goal: str,
     for shift in range(4):
         order = goals[shift:] + goals[:shift]
         d = one_distribution(client, prefix_text, order, logger,
-                             f"{purpose}_perm{shift}", chars_block=chars_block)
+                             f"{purpose}_perm{shift}", chars_block=chars_block,
+                             model=model)
         coverages.append(d["coverage"])
         perm_p = {g: d["p_labels"][LABELS[i]] for i, g in enumerate(order)}
         perm_argmaxes.append(max(perm_p, key=perm_p.get))
@@ -280,9 +283,15 @@ def main() -> None:
                     help="clause mode: which decomposition points to "
                          "localize (also: uncertainty_creation_step, "
                          "interpretation_branch)")
+    ap.add_argument("--model", default=None,
+                    help="OpenAI chat model for the API probe "
+                         "(default: config.API_PROBE_MODEL / gpt-4o-mini)")
     ap.add_argument("--out", default="goal_dist.json")
     ap.add_argument("--log", default=None)
     args = ap.parse_args()
+
+    import config
+    probe_model = args.model or config.API_PROBE_MODEL
 
     from openai import OpenAI
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -323,14 +332,16 @@ def main() -> None:
             d0 = goal_posterior(client, T0_TEXT,
                                 goals, ep.hidden_goal, logger,
                                 f"steps_{eid}_t0",
-                                chars_block=chars_blocks[eid])
+                                chars_block=chars_blocks[eid],
+                                model=probe_model)
             d0["t"] = 0
             pts.append(d0)
             for t in range(1, len(ep.steps) + 1):
                 d = goal_posterior(client, prefix_text(ep, t), goals,
                                    ep.hidden_goal, logger,
                                    f"steps_{eid}_t{t}",
-                                   chars_block=chars_blocks[eid])
+                                   chars_block=chars_blocks[eid],
+                                   model=probe_model)
                 d["t"] = t
                 pts.append(d)
             dec = decompose(pts)
@@ -378,13 +389,15 @@ def main() -> None:
                 rows = []
                 prev = goal_posterior(client, before, goals, ep.hidden_goal,
                                       logger, f"clause_{eid}_s{b}_base",
-                                      chars_block=chars_blocks[eid])
+                                      chars_block=chars_blocks[eid],
+                                      model=probe_model)
                 base = dict(prev)
                 for j in range(1, len(clauses) + 1):
                     text = before + f"\n[step {b}] " + " ".join(clauses[:j])
                     cur = goal_posterior(client, text, goals, ep.hidden_goal,
                                          logger, f"clause_{eid}_s{b}_inc{j}",
-                                         chars_block=chars_blocks[eid])
+                                         chars_block=chars_blocks[eid],
+                                         model=probe_model)
                     row = {"kind": "incremental", "n_clauses": j,
                            "clause_added": clauses[j - 1],
                            "jsd_from_prev": jsd(prev["p"], cur["p"]),
@@ -403,7 +416,8 @@ def main() -> None:
                     text = before + f"\n[step {b}] " + " ".join(kept)
                     cur = goal_posterior(client, text, goals, ep.hidden_goal,
                                          logger, f"clause_{eid}_s{b}_del{j}",
-                                         chars_block=chars_blocks[eid])
+                                         chars_block=chars_blocks[eid],
+                                         model=probe_model)
                     row = {"kind": "deletion",
                            "clause_removed": clauses[j],
                            # for evidence clauses (resolution): deletion
@@ -466,7 +480,8 @@ def main() -> None:
                        "episodes_sha256": sha256_file(args.episodes),
                        "method": "exact posteriors from top_logprobs, "
                                  "4 cyclic label permutations averaged",
-                       "model": "gpt-4o-mini",
+                       "model": probe_model,
+                       "backend": "openai_api",
                    },
                    "results": results}, f, ensure_ascii=False, indent=2)
     print(f"\n-> {args.out}")
