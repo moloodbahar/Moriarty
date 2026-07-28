@@ -5,10 +5,12 @@ Every artifact (reports, call logs, plots, analysis text) is written under
 results/<run_name>/ so a fresh end-to-end run is self-contained and easy to
 find later.
 
+Order: calibrate → Check 0 (n=100) → filter OK families → generate from
+filtered seeds → Checks 1+2 → analyze/plot → Check 3 → optional L1/L2.
+
 Usage:
-    python run_pipeline.py
-    python run_pipeline.py --name pilot_v3_fresh
-    python run_pipeline.py --name pilot_v3_fresh --force   # reuse existing folder
+    python run_pipeline.py --name confirmatory_v4_3 --seeds seeds_v4_3.json
+    python run_pipeline.py --name confirmatory_v4_3 --force
     python run_pipeline.py --skip-l1 --skip-l2   # env + checks only
     python run_pipeline.py --dry-run
 
@@ -29,6 +31,8 @@ RESULTS_ROOT = ROOT / "results"
 
 DEFAULT_SEEDS = "seeds_v3_1.json"
 DEFAULT_CALIBRATION = "calibration_cases.json"
+DEFAULT_N_TRIALS = 100
+DEFAULT_MIN_FAMILIES = 6
 
 
 def utc_stamp() -> str:
@@ -59,8 +63,14 @@ def main() -> None:
     p.add_argument("--name", default=None,
                    help="run folder name under results/ (default: UTC timestamp)")
     p.add_argument("--seeds", default=DEFAULT_SEEDS)
-    p.add_argument("--n-trials", type=int, default=24,
-                   help="Check 0 trials per family (24 for gating runs)")
+    p.add_argument("--n-trials", type=int, default=DEFAULT_N_TRIALS,
+                   help="Check 0 trials per family (default 100 for gating)")
+    p.add_argument("--min-families", type=int, default=DEFAULT_MIN_FAMILIES,
+                   help="abort if fewer than this many families pass Check 0 "
+                        "(default 6)")
+    p.add_argument("--skip-filter", action="store_true",
+                   help="do not filter seeds after Check 0; generate from "
+                        "--seeds as-is (legacy pilot behavior)")
     p.add_argument("--temperature", type=float, default=0.8)
     p.add_argument("--skip-calibration", action="store_true")
     p.add_argument("--skip-l1", action="store_true",
@@ -93,6 +103,7 @@ def main() -> None:
         "calibration_calls": run_dir / "calibration_calls.jsonl",
         "seed_priors": run_dir / "seed_priors_report.json",
         "seed_priors_calls": run_dir / "seed_priors_report_calls.jsonl",
+        "seeds_passing": run_dir / "seeds_passing.json",
         "episodes": run_dir / "episodes.json",
         "episodes_calls": run_dir / "episodes_calls.jsonl",
         "checks_report": run_dir / "checks_report.json",
@@ -109,12 +120,19 @@ def main() -> None:
         "predictions_l2_analysis": run_dir / "predictions_L2_analysis.txt",
     }
 
+    # Generation always uses either the filtered file or the input seeds.
+    gen_seeds = (str(paths["seeds_passing"]) if not args.skip_filter
+                 else args.seeds)
+
     manifest = {
         "run_name": run_name,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "run_dir": str(run_dir.relative_to(ROOT)),
         "seeds": args.seeds,
+        "seeds_for_generation": gen_seeds,
         "n_trials_check0": args.n_trials,
+        "min_families": args.min_families,
+        "filter_after_check0": not args.skip_filter,
         "temperature": args.temperature,
         "steps": [],
         "artifacts": {k: str(v.relative_to(ROOT)) for k, v in paths.items()},
@@ -151,14 +169,28 @@ def main() -> None:
     ], dry_run=args.dry_run)
     record("check_seed_priors")
 
-    # 2. Generate episodes
+    # 1b. Filter to Check-0-passing families (hard gate before generation)
+    if not args.skip_filter:
+        run_cmd([
+            py, "filter_seeds.py", args.seeds, str(paths["seed_priors"]),
+            "--out", str(paths["seeds_passing"]),
+            "--min-families", str(args.min_families),
+        ], dry_run=args.dry_run)
+        record("filter_seeds", note=f"min_families={args.min_families}")
+        gen_seeds = str(paths["seeds_passing"])
+        manifest["seeds_for_generation"] = gen_seeds
+    else:
+        record("filter_seeds", "skipped")
+        gen_seeds = args.seeds
+
+    # 2. Generate episodes (from filtered seeds when filter ran)
     run_cmd([
-        py, "generate_episodes.py", args.seeds,
+        py, "generate_episodes.py", gen_seeds,
         "--temperature", str(args.temperature),
         "--out", str(paths["episodes"]),
         "--log", str(paths["episodes_calls"]),
     ], dry_run=args.dry_run)
-    record("generate_episodes")
+    record("generate_episodes", note=f"seeds={gen_seeds}")
 
     # 3. Checks 1+2
     run_cmd([
@@ -237,6 +269,8 @@ def main() -> None:
     print(f"Manifest: {run_dir / 'RUN.json'}")
     print("\nKey outputs:")
     show_keys = [
+        ("seed priors (Check 0)", "seed_priors"),
+        ("seeds passing filter", "seeds_passing"),
         ("checks report", "checks_report"),
         ("checks analysis (t*)", "checks_analysis"),
         ("checks plots", "checks_plots"),
@@ -254,7 +288,9 @@ def main() -> None:
         ]
     for label, key in show_keys:
         rel = paths[key].relative_to(ROOT)
-        if args.dry_run or paths[key].exists():
+        if args.dry_run or paths[key].exists() or key == "seeds_passing":
+            if args.skip_filter and key == "seeds_passing":
+                continue
             print(f"  {label:24s}  {rel}")
 
 
