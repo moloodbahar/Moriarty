@@ -391,15 +391,6 @@ The last point is the target of the planned trajectory-mechanism study.
 
 A preprint citation will be added when the manuscript is released. For now, please cite the repository:
 
-```bibtex
-@misc{arman2026moriarty,
-  author       = {Molood (Melody) Arman},
-  title        = {The Moriarty Framework: A Validated Environment for Measuring Hidden-Goal Trajectories and Interpretive Capture},
-  year         = {2026},
-  howpublished = {GitHub repository},
-  url          = {https://github.com/moloodbahar/Moriarty}
-}
-```
 
 ---
 
@@ -414,4 +405,3 @@ I am interested in collaboration on:
 - multi-agent misdirection and recovery; and
 - benchmark and dataset development.
 
-Open an issue or contact **Molood (Melody) Arman** through the repository profile.
